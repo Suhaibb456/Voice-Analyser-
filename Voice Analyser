@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ultimate Voice Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      color: #007bff;
+      margin-bottom: 20px;
+      font-size: 2.5em;
+    }
+    h2 {
+      color: #333;
+      margin-top: 20px;
+      font-size: 1.8em;
+    }
+    p {
+      color: #555;
+      line-height: 1.6;
+      font-size: 1.1em;
+    }
+    .features {
+      text-align: left;
+      margin: 20px 0;
+    }
+    .features ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .features ul li {
+      margin: 10px 0;
+      font-size: 1em;
+      color: #555;
+    }
+    .features ul li::before {
+      content: "✔";
+      color: #007bff;
+      margin-right: 10px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.1em;
+      margin: 20px 0;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #333;
+    }
+    .contact {
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #777;
+    }
+    .contact a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .contact a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to the Ultimate Voice Analyzer!</h1>
+    <p>Do you want to know how good your voice sounds? Whether you are a singer, public speaker, or just someone curious about their voice quality, our advanced Voice Analyzer is here to help! With just a simple voice upload, you can get instant feedback on your vocal quality, clarity, and uniqueness.</p>
+
+    <h2>How It Works?</h2>
+    <ol>
+      <li><strong>Upload Your Voice</strong> – Simply record and upload a short clip of your voice.</li>
+      <li><strong>Processing & Analysis</strong> – Our AI-powered tool will analyze your voice based on different parameters like pitch, tone, clarity, and modulation.</li>
+      <li><strong>Get Instant Results</strong> – Within seconds, you will receive a detailed report about your voice quality and suggestions on how to improve it.</li>
+    </ol>
+
+    <h2>Why Use Our Voice Analyzer?</h2>
+    <div class="features">
+      <ul>
+        <li><strong>AI-Powered Accuracy</strong> – Our cutting-edge technology evaluates your voice scientifically.</li>
+        <li><strong>Instant Feedback</strong> – Get immediate results without any delay.</li>
+        <li><strong>Perfect for Everyone</strong> – Whether you're a professional or just curious, our tool is designed for all.</li>
+        <li><strong>Completely Free to Use</strong> – No hidden charges, no hassle!</li>
+      </ul>
+    </div>
+
+    <h2>Features of Our Voice Analyzer</h2>
+    <div class="features">
+      <ul>
+        <li><strong>Vocal Clarity Check</strong> – Measures how clear and crisp your voice is.</li>
+        <li><strong>Pitch & Tone Evaluation</strong> – Analyzes your voice pitch to determine its balance and effectiveness.</li>
+        <li><strong>Modulation & Expression</strong> – Detects how well you control your voice for better communication.</li>
+        <li><strong>Personalized Recommendations</strong> – Get tips to enhance your voice quality and speaking skills.</li>
+      </ul>
+    </div>
+
+    <button id="recordButton">Upload Voice</button>
+    <button id="stopButton" disabled>Stop Recording</button>
+    <div class="result" id="result"></div>
+
+    <div class="contact">
+      For any questions or feedback, feel free to <a href="#">Contact Us</a>. We love hearing from our users and continuously improving our tool to serve you better!
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    const recordButton = document.getElementById('recordButton');
+    const stopButton = document.getElementById('stopButton');
+    const resultDiv = document.getElementById('result');
+
+    // Start recording
+    recordButton.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        recordButton.disabled = true;
+        stopButton.disabled = false;
+        resultDiv.textContent = "Recording... Speak now!";
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+        resultDiv.textContent = "Error accessing microphone. Please allow permissions.";
+      }
+    });
+
+    // Stop recording
+    stopButton.addEventListener('click', () => {
+      mediaRecorder.stop();
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        analyzeAudio(audioBlob);
+      };
+      recordButton.disabled = false;
+      stopButton.disabled = true;
+    });
+
+    // Analyze audio
+    function analyzeAudio(audioBlob) {
+      const audioContext = new AudioContext();
+      const fileReader = new FileReader();
+
+      fileReader.onload = () => {
+        audioContext.decodeAudioData(fileReader.result, (buffer) => {
+          const audioBuffer = buffer;
+          const pitch = calculatePitch(audioBuffer);
+          const clarity = calculateClarity(audioBuffer);
+
+          // Simple scoring system
+          const score = ((pitch / 500) + clarity) / 2 * 10;
+          resultDiv.innerHTML = `
+            <h2>Your Voice Analysis Results</h2>
+            <p><strong>Pitch:</strong> ${pitch.toFixed(2)} Hz</p>
+            <p><strong>Clarity:</strong> ${clarity.toFixed(2)}</p>
+            <p><strong>Overall Score:</strong> ${score.toFixed(2)}/10</p>
+            <p><strong>Recommendation:</strong> ${getRecommendation(score)}</p>
+          `;
+        });
+      };
+
+      fileReader.readAsArrayBuffer(audioBlob);
+    }
+
+    // Calculate pitch (basic implementation)
+    function calculatePitch(audioBuffer) {
+      const channelData = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+      const autoCorrelation = new Float32Array(channelData.length);
+
+      // Autocorrelation to find pitch
+      for (let lag = 0; lag < channelData.length; lag++) {
+        let sum = 0;
+        for (let i = 0; i < channelData.length - lag; i++) {
+          sum += channelData[i] * channelData[i + lag];
+        }
+        autoCorrelation[lag] = sum;
+      }
+
+      let maxCorrelation = 0;
+      let pitch = 0;
+      for (let lag = 1; lag < autoCorrelation.length; lag++) {
+        if (autoCorrelation[lag] > maxCorrelation) {
+          maxCorrelation = autoCorrelation[lag];
+          pitch = sampleRate / lag;
+        }
+      }
+      return pitch;
+    }
+
+    // Calculate clarity (basic implementation)
+    function calculateClarity(audioBuffer) {
+      const channelData = audioBuffer.getChannelData(0);
+      const rms = Math.sqrt(channelData.reduce((sum, val) => sum + val * val, 0) / channelData.length);
+      return rms;
+    }
+
+    // Get personalized recommendation
+    function getRecommendation(score) {
+      if (score > 8) return "Your voice is excellent! Keep up the great work.";
+      if (score > 6) return "Your voice is good, but there's room for improvement. Try practicing modulation.";
+      return "Your voice needs improvement. Consider working on clarity and pitch.";
+    }
+  </script>
+</body>
+</html>
